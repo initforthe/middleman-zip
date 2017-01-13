@@ -13,11 +13,11 @@ module MiddlemanZip
       # Require libraries only when activated
       require 'zip'
 
-      options = extensions[:zip].options
-
       # set up your extension
       app.after_build do |builder|
         files = ::Middleman::Util.all_files_under(config[:build_dir])
+
+        options = extensions[:zip].options
 
         files.each do |file|
           next unless file.extname == '.html'
@@ -31,7 +31,8 @@ module MiddlemanZip
 
           Zip::File.open(zip_file, Zip::File::CREATE) do |zf|
             options.file_types.each do |ext|
-              zf.add(file_name, "#{dir}/#{base.to_s.gsub('.html', ext)}")
+              file_name = "#{base.to_s.gsub('.html', ext)}"
+              zf.add(file_name, "#{dir}/#{file_name}")
             end
           end
         end
@@ -52,7 +53,11 @@ module MiddlemanZip
         file_path.shift
         zip_file = file_path.join('/').gsub('.html', '.zip')
 
-        res << Middleman::Sitemap::Resource.new(app.sitemap, zip_file, File.join(app.root, app.config[:build_dir], zip_file))
+        source_file = File.join(app.root, app.config[:build_dir], zip_file)
+
+        if File.exist? source_file
+          res << Middleman::Sitemap::Resource.new(app.sitemap, zip_file, source_file)
+        end
       end
 
       resources + res
